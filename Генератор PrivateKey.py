@@ -14,7 +14,7 @@ else:
         priv_bytes = key_from_seed(seed, account_path=path)
         priv = PrivateKey(priv_bytes)
         
-        print("\nSK:", priv.hex())
+        print("\nPK:", priv.hex())
         print("Адрес:", priv.public_key.to_base58check_address())
     except Exception as e:
         print(f"Error: {type(e).__name__} - {e}")
