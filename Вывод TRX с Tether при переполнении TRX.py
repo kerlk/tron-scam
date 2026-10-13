@@ -80,7 +80,7 @@ class Sweeper:
     async def send(self, amt_sun):
         async with self.sem:
             try:
-                txn = self.client.trx.transfer(self.addr, self.to, amt_sun).build()
+                txn = await self.client.trx.transfer(self.addr, self.to, amt_sun).build()
                 signed = txn.sign(self.keys[0])
                 if self.multi and len(self.keys) > 1:
                     signed = signed.sign(self.keys[1])
@@ -121,18 +121,14 @@ class Sweeper:
                     continue
 
                 fee = self.calc_fee(bw)
-
                 status = "FREE" if fee == 0 else f"PAID (~{fee:.4f})"
-                print(
-                    f"\rBal: {bal:.6f} | BW: {bw} | Fee: {status}",
-                    end="", flush=True
-                )
 
-                # Оставляем BAL_TARGET + fee (с запасом), отправляем остальное
+                print(f"\rBal: {bal:.6f} | BW: {bw} | Fee: {status}", end="", flush=True)
+
                 to_send = bal - BAL_TARGET - fee
 
                 if to_send > MIN_SEND:
-                    amt_sun = int(to_send * 1_000_000)   # округление ВНИЗ
+                    amt_sun = int(to_send * 1_000_000)
                     real_send = amt_sun / 1_000_000
                     print(f"\nSending: {real_send:.6f} TRX (fee ~{fee:.4f})")
                     ok = await self.send(amt_sun)
@@ -142,13 +138,15 @@ class Sweeper:
                     else:
                         print("Retry in 5s...")
                         await asyncio.sleep(5)
+                else:
+                    await asyncio.sleep(1) 
+
             except KeyboardInterrupt:
                 print("\nStop.")
                 break
             except Exception as e:
                 print(f"\nLoop Err: {e}")
                 await asyncio.sleep(5)
-
             await asyncio.sleep(DELAY)
 
 
